@@ -1,77 +1,99 @@
-### **Short Description (English)**  
-The **File Renamer** tool for Unity Editor allows users to batch rename and organize image files with customizable naming templates. It supports multiple options.
+
+# **File Renamer - Unity Editor Tool**
+
+![previewImage](https://github.com/user-attachments/assets/5e2524fe-0d64-4ba7-bc7d-fa2a0dc2d617)
+
+
+## **Overview**
+**File Renamer** is a **Unity Editor extension** that streamlines batch renaming and organization of image files. It provides an intuitive **UI for selecting, previewing, and renaming multiple files** with customizable templates.
+
+The tool offers various **sorting, numbering, and folder organization options**, ensuring flexibility and control over file naming conventions.
 
 ---
 
-### **File Renamer - Unity Editor Tool**  
-#### **Overview**  
-The **File Renamer** is a Unity Editor extension designed to streamline the process of renaming and organizing image files. It provides an intuitive UI for selecting, sorting, and renaming multiple files with customizable templates.
-
-#### **Features**  
-✅ **Batch File Selection** – Choose multiple image files at once.  
+## **Features**
+✅ **Batch File Selection** – Select multiple image files at once.  
 ✅ **Custom Naming Templates** – Define a base name for the new files.  
-✅ **Automatic Numbering** – Append sequential numbers to filenames.  
-✅ **Preserve Existing Numbering** – Keep existing numbers from filenames.  
+✅ **Live Filename Preview** – See the new filenames before applying changes.  
+✅ **Automatic Numbering** – Append sequential numbers to filenames (`_01`, `_02`, etc.).  
+✅ **Preserve Existing Numbering** – Retains numbers found in original filenames.  
 ✅ **Sorting Options** – Sort files in ascending or descending order.  
+✅ **Remove Files from Selection** – Remove specific files before processing.  
 ✅ **Overwrite Existing Files** – Choose whether to replace existing files.  
-✅ **Subfolder Creation** – Organize renamed files into a subfolder.  
-✅ **Error Handling** – Prevents overwriting issues and alerts for missing files.  
+✅ **Subfolder Creation** – Save renamed files into a subfolder.  
+✅ **Open Export Folder** – Automatically open the destination folder after renaming.  
+✅ **Error Handling & Logs** – Displays warnings for missing files or naming conflicts.  
 
 ---
 
-### **How to Use**  
-#### **1. Open the File Renamer Window**  
-- Go to `Tools > File Renamer` in the Unity Editor.
+## **How to Use**
 
-#### **2. Select Image Files**  
-- Click the `Select Files` button.  
-- Choose multiple image files (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`).  
-- The tool will display the number of selected files.
+### **1. Open the File Renamer Window**
+- Navigate to `Tools > File Renamer` in the Unity Editor.
 
-#### **3. Define the File Naming Template**  
-- Enter a base filename in the `File Name Template` field.  
-- (Optional) Click `Select template from file` to extract a name from an existing file.
+### **2. Select Image Files**
+- Click **"Select Files"** to open the file selection dialog.
+- Choose multiple image files (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`).
+- The tool will display the **number of selected files**.
 
-#### **4. Configure Renaming Options**  
+### **3. Manage Selected Files**
+- Toggle **"Show File List"** to preview selected files.  
+- **Remove individual files** from the selection using the `[rm]` button.  
+
+### **4. Define the File Naming Template**
+- Enter a base name in the **"File Name Template"** field.  
+- (Optional) Click **"Select template from file"** to extract a name from an existing file.  
+
+### **5. Configure Renaming Options**
 - **Can Overwrite Files** – Allow overwriting existing files.  
 - **Sort Ascending** – Sort files alphabetically before renaming.  
-- **Add Numbering** – Append sequential numbers to filenames ("_01", "_02", etc.).  
-- **Preserve Existing Numbering** – Keep numbers from original filenames.  
-- **Create Subfolder** – Save renamed files in a new subfolder.
+- **Add Numbering** – Append sequential numbers to filenames (`_01`, `_02`, etc.).  
+- **Preserve Existing Numbering** – Retain numbers from original filenames.  
+- **Create Subfolder** – Save renamed files into a new subfolder.  
+- **Open Export Folder** – Automatically open the output folder after renaming.  
 
-#### **5. Process Files**  
-- Click `Process Files`.  
-- Select an export folder.  
-- The files will be renamed and copied to the chosen location.  
+### **6. Preview the Result**
+- Toggle **"Preview Result"** to see a **live preview** of the renaming process.  
+- The tool displays filenames in the format:  
+  ```
+  oldFileName.png → newFileName_01.png
+  ```
+
+### **7. Process & Export Files**
+- Click **"Process Files"** to apply changes.
+- The tool will generate new filenames and export the files.
+- If **"Open Export Folder"** is enabled, the destination folder will open automatically.
 
 ---
 
-### **File Naming Logic**  
-- If **preserve existing numbering** is enabled, filenames will retain numbers found at the end.  
-- If **add numbering** is enabled, files will be numbered sequentially (`image_01.png`, `image_02.png`, etc.).  
-- The tool maintains the original file extensions.
+## **File Naming Logic**
+- If **Preserve Existing Numbering** is enabled, filenames **retain** numbers found in the original name.
+- If **Add Numbering** is enabled, files are **sequentially numbered** (`image_01.png`, `image_02.png`, etc.).
+- The tool **maintains the original file extensions**.
 
 ---
 
-### **Example**  
-#### **Before Renaming:**  
+## **Example Usage**
+
+### **Before Renaming:**
 📂 `photo1.png`, `photo2.png`, `snapshot3.jpg`  
 
-#### **After Renaming (Template: "image", Add Numbering ON):**  
+### **After Renaming (Template: "image", Add Numbering ON):**
 📂 `image_01.png`, `image_02.png`, `image_03.jpg`  
 
-#### **After Renaming (Template: "image", Preserve Numbering ON):**  
+### **After Renaming (Template: "image", Preserve Numbering ON):**
 📂 `image_1.png`, `image_2.png`, `image_3.jpg`  
 
 ---
 
-### **Debugging & Logs**  
-- Errors (e.g., no files selected, missing export folder) are logged in Unity’s Console.  
-- If no valid files exist, the tool prompts a warning and resets selection.  
+## **Error Handling & Debugging**
+- **No files selected?** → A warning will appear in Unity’s Console.  
+- **Missing export folder?** → The tool prompts for a valid destination.  
+- **File conflicts?** → The tool prevents accidental overwriting if not allowed.  
 
 ---
 
-### **Future Improvements**  
-🔹 Support for additional file types.  
-🔹 More advanced sorting and filtering options.  
-🔹 Customizable numbering formats (e.g., `image-001.png`).  
+### **📌 Notes**
+This tool is designed for **Unity Editor use only** and does not work in a standalone build.  
+
+**File Renamer** helps speed up asset organization for game development, UI design, and more!
