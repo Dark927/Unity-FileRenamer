@@ -5,17 +5,17 @@
   "description": "This package contains Editor tools for Renaming groups of assets in various ways.",
   "unity": "2022.3",
   "unityRelease": "0b5",
-  "documentationUrl": "https://example.com/",
-  "changelogUrl": "https://example.com/changelog.html",
-  "licensesUrl": "https://example.com/licensing.html",
+  "documentationUrl": "https://github.com//Dark927/Unity-FileRenamer/blob/main/README.md",
+  "changelogUrl": "https://github.com//Dark927/Unity-FileRenamer/blob/main/CHANGELOG.md",
+  "licensesUrl": "MIT",
   "keywords": [
-    "keyword1",
-    "keyword2",
-    "keyword3"
+    "editor",
+    "tools",
+    "assets"
   ],
   "author": {
-    "name": "Unity",
-    "email": "unity@example.com",
-    "url": "https://www.unity3d.com"
+    "name": "Dark",
+    "email": "zerokay29@gmail.com",
+    "url": "https://github.com/Dark927/Unity-FileRenamer"
   }
 }
