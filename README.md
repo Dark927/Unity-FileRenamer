@@ -1,13 +1,33 @@
 
 # **File Renamer - Unity Editor Tool**
 
-![previewImage](https://github.com/user-attachments/assets/5e2524fe-0d64-4ba7-bc7d-fa2a0dc2d617)
+![previewImage](https://github.com/user-attachments/assets/540f255b-b995-4000-930f-5c518ac37aae)
 
 
 ## **Overview**
 **File Renamer** is a **Unity Editor extension** that streamlines batch renaming and organization of image files. It provides an intuitive **UI for selecting, previewing, and renaming multiple files** with customizable templates.
 
 The tool offers various **sorting, numbering, and folder organization options**, ensuring flexibility and control over file naming conventions.
+
+---
+
+## Installation
+To install File Renamer via Unity's Package Manager, follow these steps:
+
+1. Open your Unity project.
+
+2. Go to Window > Package Manager.
+
+3. In the Package Manager window, click the + button in the top left corner.
+
+4. Select "Add package from Git URL...".
+
+5. In the popup that appears, enter the following URL: https://github.com/Dark927/Unity-FileRenamer.git
+
+6. Click Add to begin the installation.
+
+The File Renamer tool will now be available in your Unity project, ready to use.
+
 
 ---
 
