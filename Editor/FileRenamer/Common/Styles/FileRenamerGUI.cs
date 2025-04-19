@@ -1,6 +1,7 @@
 ﻿using FileRenamer.Styles;
 using System;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -20,6 +21,12 @@ namespace FileRenamer
         private Vector2 _globalScrollPos = Vector2.zero;
         private Vector2 _inputViewScrollPos = Vector2.zero;
         private Vector2 _resultPreviewScrollPos = Vector2.zero;
+
+        #endregion
+
+        #region Properties
+
+        private bool CanPreviewResults => _fileRenamer.HasInputFiles;
 
         #endregion
 
@@ -91,7 +98,7 @@ namespace FileRenamer
         {
             EditorGUILayout.Space();
             FileRenamerStyleGUI.DrawUILine(Color.black);
-            GUILayout.Label("File Renamer - made by Dark", EditorStyles.boldLabel);
+            GUILayout.Label("File Renamer", EditorStyles.boldLabel);
             FileRenamerStyleGUI.DrawUILine(Color.black);
             EditorGUILayout.Space();
         }
@@ -103,7 +110,7 @@ namespace FileRenamer
 
             if (GUILayout.Button("Select Files", FileRenamerStyleGUI.ButtonsLayouts))
             {
-                _fileRenamer.RequestFiles();
+                _fileRenamer.ReimportFiles();
                 ClearMessages();
             }
         }
@@ -123,7 +130,7 @@ namespace FileRenamer
             }
 
 
-            GUILayout.Label($"Selected Files: {_fileRenamer.InputFilePaths.Count}", FileRenamerStyleGUI.GreenLabel);
+            GUILayout.Label($"Selected Files: {_fileRenamer.FilesCountToProcess}", FileRenamerStyleGUI.GreenLabel);
 
             if (_fileRenamer.HasMaxInputFiles)
             {
@@ -148,9 +155,9 @@ namespace FileRenamer
             // Begin a scroll view for long lists
             _inputViewScrollPos = EditorGUILayout.BeginScrollView(_inputViewScrollPos, GUILayout.Height(150));
 
-            for (int currentFileIndex = 0; currentFileIndex < _fileRenamer.InputFilePaths.Count; currentFileIndex++)
+            for (int currentFileIndex = 0; currentFileIndex < _fileRenamer.InputFilePaths.Count(); currentFileIndex++)
             {
-                string currentFile = _fileRenamer.InputFilePaths[currentFileIndex];
+                string currentFile = _fileRenamer.InputFilePaths.ElementAt(currentFileIndex);
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.Label($"{(currentFileIndex + 1)}.\t{Path.GetFileName(currentFile)}", GUILayout.ExpandWidth(true));
 
@@ -159,6 +166,7 @@ namespace FileRenamer
                 if (GUILayout.Button("rm", GUILayout.Width(25)))
                 {
                     _fileRenamer.RemoveInputFilePath(currentFile);
+                    _resultMsg = _fileRenamer.LastResultMsg;
                     EditorGUILayout.EndHorizontal();
 
                     // Stop iteration to prevent state corruption
@@ -178,23 +186,30 @@ namespace FileRenamer
             GUILayout.Label("File Name Template [ Settings ]", EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
-            _fileRenamer.Settings.FileNameTemplate = EditorGUILayout.TextField(
+            string targetTemplate = EditorGUILayout.TextField(
                 "File Name Template",
                 _fileRenamer.Settings.FileNameTemplate,
                 GUILayout.Width(FileRenamerStyleGUI.LongTextFieldMaxWidth)
                 );
 
+            _fileRenamer.Settings.SetFileNameTemplate(targetTemplate);
+
             EditorGUILayout.Space();
 
             if (GUILayout.Button("Select template from file", FileRenamerStyleGUI.ButtonsLayouts))
             {
-                _fileRenamer.Settings.FileNameTemplate = _fileRenamer.RequestFile() ?? _fileRenamer.Settings.FileNameTemplate;
+                string requestedFileName = _fileRenamer.RequestFileName();
+
+                if (requestedFileName != null)
+                {
+                    _fileRenamer.Settings.SetFileNameTemplate(requestedFileName);
+                }
             }
         }
 
         private void TryPreviewResult()
         {
-            if (!_fileRenamer.HasInputFiles)
+            if (!CanPreviewResults)
             {
                 return;
             }
@@ -245,6 +260,11 @@ namespace FileRenamer
             GUILayout.Label("Export Settings [ Settings ]", EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
+            DisplayToggle("Can Overwrite Files",
+                () => _fileRenamer.Settings.OverwriteFiles,
+                value => _fileRenamer.Settings.OverwriteFiles = value,
+                FileRenamerStyleGUI.ToggleLabelLayouts);
+
             DisplayToggle("Create Subfolder",
                 () => _fileRenamer.Settings.CreateSubFolder,
                 value => _fileRenamer.Settings.CreateSubFolder = value,
@@ -259,11 +279,6 @@ namespace FileRenamer
         private void DisplayProcessSettings()
         {
             GUILayout.Label("Process Settings [ Settings ]", EditorStyles.boldLabel);
-
-            DisplayToggle("Can Overwrite Files",
-                () => _fileRenamer.Settings.OverwriteFiles,
-                value => _fileRenamer.Settings.OverwriteFiles = value,
-                FileRenamerStyleGUI.ToggleLabelLayouts);
 
             DisplayToggle("Sort Ascending",
                 () => _fileRenamer.Settings.SortAscending,
@@ -302,7 +317,6 @@ namespace FileRenamer
 
             if (int.TryParse(_customNumbering, out int customIndex))
             {
-
                 _fileRenamer.Settings.NumberingStartIndex = customIndex;
             }
             EditorGUILayout.Space();

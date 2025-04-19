@@ -1,5 +1,6 @@
 ﻿using SFB;
 using System;
+using System.IO;
 
 
 namespace FileRenamer
@@ -10,8 +11,10 @@ namespace FileRenamer
 
         public static readonly ExtensionFilter[] SupportedFileExtensions = new[]
 {
+            new ExtensionFilter("All Files", "*"),
             new ExtensionFilter("Image Files", "png", "jpg", "jpeg", "bmp", "tiff"),
-            new ExtensionFilter("All Files", "*")
+            new ExtensionFilter("3D Models", "fbx", "blender", "obj", "stl", "amf", "3ds", "iges"),
+            new ExtensionFilter("Json/XML", "json", "xml"),
         };
 
         public event Action OnNamingSettingsUpdated;
@@ -31,18 +34,7 @@ namespace FileRenamer
         public bool CreateSubFolder { get; set; }                   // Create a sub folder.
         public bool OpenExportFolder { get; set; }                  // Open the export folder.
 
-        public string FileNameTemplate
-        {
-            get => _fileNameTemplate;
-            set
-            {
-                if (_fileNameTemplate != value)
-                {
-                    _fileNameTemplate = value;
-                    OnNamingSettingsUpdated?.Invoke();
-                }
-            }
-        }
+        public string FileNameTemplate => _fileNameTemplate;
 
         public int NumberingStartIndex
         {
@@ -94,6 +86,41 @@ namespace FileRenamer
                     OnNamingSettingsUpdated?.Invoke();
                 }
             }
+        }
+
+        #endregion
+
+
+        #region Methods
+
+        public void SetFileNameTemplate(string targetTemplate)
+        {
+            if (_fileNameTemplate != targetTemplate)
+            {
+                //// Validate the file name template for illegal characters
+                //if (ContainsInvalidFileNameChars(value))
+                //{
+                //    throw new ArgumentException("File name template contains illegal characters.");
+                //}
+
+                _fileNameTemplate = targetTemplate;
+                OnNamingSettingsUpdated?.Invoke();
+            }
+        }
+        
+        private bool ContainsInvalidFileNameChars(string fileName)
+        {
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+
+            foreach (char c in invalidChars)
+            {
+                if (fileName.Contains(c))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion

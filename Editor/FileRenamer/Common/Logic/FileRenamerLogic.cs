@@ -3,8 +3,8 @@ using UnityEditor;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using SFB; 
 using System;
+using SFB;
 
 namespace FileRenamer
 {
@@ -12,12 +12,13 @@ namespace FileRenamer
     {
         #region Fields 
 
-        public const int MaxFileLimit = 500;
+        public const int MaxFileLimit = 1000;
 
         private List<string> _inputFilePaths;
+        private List<string> _overwrittenFiles;
         private Dictionary<string, string> _processedFiles;
 
-        private string _exportFolderPath = ""; // Path to export folder
+        private string _exportFolderPath = "";
         private FileRenamerSettings _settings;
 
         private bool _processed = false;
@@ -29,10 +30,11 @@ namespace FileRenamer
 
         #region Properties 
 
-        public bool HasInputFiles => _inputFilePaths != null && _inputFilePaths.Count > 0;
-        public bool HasMaxInputFiles => _inputFilePaths != null && _inputFilePaths.Count == MaxFileLimit;
+        public IEnumerable<string> InputFilePaths => _inputFilePaths;
+        public int FilesCountToProcess => _inputFilePaths.Count;
+        public bool HasInputFiles => _inputFilePaths != null && FilesCountToProcess > 0;
+        public bool HasMaxInputFiles => _inputFilePaths != null && FilesCountToProcess == MaxFileLimit;
         public FileRenamerSettings Settings => _settings;
-        public List<string> InputFilePaths => _inputFilePaths;
         public Dictionary<string, string> ProcessedFiles => _processedFiles;
 
         public bool Processed => _processed;
@@ -50,6 +52,7 @@ namespace FileRenamer
         {
             _settings = settings;
             _inputFilePaths = new List<string>();
+            _overwrittenFiles = new List<string>();
             _processedFiles = new Dictionary<string, string>();
 
             Settings.OnNamingSettingsUpdated += UnsetProcessedStatus;
@@ -62,24 +65,37 @@ namespace FileRenamer
 
         #endregion
 
-        public void RequestFiles()
+        public void ReimportFiles()
         {
-            _inputFilePaths = StandaloneFileBrowser
-                .OpenFilePanel("Select Files", "", FileRenamerSettings.SupportedFileExtensions, true)
-                .Take(MaxFileLimit)
-                .ToList();
-            UnsetProcessedStatus();
+            ClearFiles();
+            AddFiles();
+        }
+
+        public void AddFiles()
+        {
+            if (_inputFilePaths == null)
+            {
+                return;
+            }
+
+            int maxFilesToTake = MaxFileLimit - _inputFilePaths.Count;
+            AddFilePathsToProcess(RequestFiles(maxFilesToTake));
 
             if (_inputFilePaths.Count == MaxFileLimit)
             {
-                Debug.LogWarning($"Only the first {MaxFileLimit} files were selected.");
+                Debug.LogWarning($"Only the first {maxFilesToTake} files were selected.");
             }
         }
 
-        public string RequestFile()
+        public void ClearFiles()
         {
-            string[] filePath = StandaloneFileBrowser.OpenFilePanel("Select Template File", "", FileRenamerSettings.SupportedFileExtensions, false);
-            return filePath.Length > 0 ? Path.GetFileNameWithoutExtension(filePath[0]) : null;
+            _inputFilePaths?.Clear();
+        }
+
+        public string RequestFileName()
+        {
+            string[] filePath = StandaloneFileBrowser.OpenFilePanel("Select File to extract name", "", FileRenamerSettings.SupportedFileExtensions, false);
+            return filePath.Length > 0 ? Path.GetFileNameWithoutExtension(filePath.First()) : null;
         }
 
         public void RemoveInputFilePath(string targetFilePath)
@@ -97,7 +113,7 @@ namespace FileRenamer
 
         public void ProcessFiles()
         {
-            if(Processed)
+            if (Processed)
             {
                 return;
             }
@@ -107,7 +123,6 @@ namespace FileRenamer
 
             if (files == null || files.Count == 0)
             {
-                _inputFilePaths = null;
                 _errorMsg = "# Not processed : Files do not exist!";
                 return;
             }
@@ -152,13 +167,20 @@ namespace FileRenamer
                 _processedFiles.Add(originalFilePath, newFileName);
             }
 
-            _resultMsg = $"Processed {files.Count} files";
+            _resultMsg = $"Processed {files.Count} files (ready for export)";
             _processed = true;
         }
 
-        private void UnsetProcessedStatus()
+        public string GetOverwrittenFilesInfo()
         {
-            _processed = false;
+            if (_overwrittenFiles.Count > 0)
+            {
+                return "The following files were overwritten:\n" + string.Join("\n", _overwrittenFiles);
+            }
+            else
+            {
+                return "No files were overwritten.";
+            }
         }
 
         public void TryExportFiles()
@@ -182,8 +204,39 @@ namespace FileRenamer
             ExportFiles();
             TryOpenExportFolder();
 
-            Debug.Log($"Exported {_processedFiles.Count} files to {_exportFolderPath}");
             _resultMsg = $"Exported {_processedFiles.Count} files to {_exportFolderPath}";
+
+            if (Settings.OverwriteFiles)
+            {
+                _resultMsg += $"\n{GetOverwrittenFilesInfo()}";
+            }
+
+            Debug.Log(_resultMsg);
+        }
+
+        private IEnumerable<string> RequestFiles(int count)
+        {
+            return StandaloneFileBrowser
+                .OpenFilePanel("Select Files", "", FileRenamerSettings.SupportedFileExtensions, true)
+                .Take(count);
+        }
+
+        private void AddFilePathToProcess(string filePath)
+        {
+            _inputFilePaths.Add(filePath);
+            UnsetProcessedStatus();
+        }
+
+        private void AddFilePathsToProcess(IEnumerable<string> filePaths)
+        {
+            _inputFilePaths.AddRange(filePaths);
+            UnsetProcessedStatus();
+        }
+
+        private void UnsetProcessedStatus()
+        {
+            _processed = false;
+            _resultMsg = string.Empty;
         }
 
         private void TryOpenExportFolder()
@@ -196,11 +249,18 @@ namespace FileRenamer
 
         private void ExportFiles()
         {
+            _overwrittenFiles.Clear();
+
             foreach (var entry in _processedFiles)
             {
                 string originalPath = entry.Key;
                 string newFileName = entry.Value;
                 string newFilePath = Path.Combine(_exportFolderPath, newFileName);
+
+                if (File.Exists(newFilePath) && Settings.OverwriteFiles)
+                {
+                    _overwrittenFiles.Add(newFilePath);
+                }
 
                 File.Copy(originalPath, newFilePath, overwrite: Settings.OverwriteFiles);
             }
