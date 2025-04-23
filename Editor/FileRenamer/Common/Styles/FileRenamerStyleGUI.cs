@@ -19,6 +19,8 @@ namespace FileRenamer.Styles
 
         #region Properties
 
+        public static string HeaderText => "File Renamer";
+
         public static Vector2 WindowMinSize => new Vector2(400f, 250f);
         public static Vector2 WindowDefaultSize => new Vector2(1000f, 550f);
         public static float ShortTextFieldMaxWidth => 300f;
@@ -42,14 +44,6 @@ namespace FileRenamer.Styles
 
 
         #region Methods
-
-        public static void DrawUILine(Color color, float thickness = 2f)
-        {
-            EditorGUILayout.Space();
-            Rect rect = EditorGUILayout.GetControlRect(false, thickness);
-            EditorGUI.DrawRect(rect, color);
-            EditorGUILayout.Space();
-        }
 
         private static GUIStyle CreateStyle(Color color)
         {

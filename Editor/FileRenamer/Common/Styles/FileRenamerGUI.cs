@@ -1,5 +1,4 @@
 ﻿using FileRenamer.Styles;
-using System;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -16,8 +15,12 @@ namespace FileRenamer
         private string _resultMsg = "";
         private string _customNumbering;
 
-        private bool _showInputFilesList = false;   // Display input files names.
-        private bool _previewResultFilesList = false; // Display processed files names.
+        private bool _showInputFilesList = false;           // Display input files names.
+        private bool _previewResultFilesList = false;       // Display processed files names.
+
+        private bool _showExtraNameTemplateSettings = false;
+        private bool _showMainNameTemplateSettings = false;
+
         private Vector2 _globalScrollPos = Vector2.zero;
         private Vector2 _inputViewScrollPos = Vector2.zero;
         private Vector2 _resultPreviewScrollPos = Vector2.zero;
@@ -59,18 +62,23 @@ namespace FileRenamer
 
         private void OnGUI()
         {
+            DisplayLayout();
+        }
+
+        private void DisplayLayout()
+        {
             _globalScrollPos = EditorGUILayout.BeginScrollView(_globalScrollPos, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
 
             DisplayHeader();
 
             DisplayFilesSelection();
             DisplaySelectedFilesStatus();
-            FileRenamerStyleGUI.DrawUILine(Color.black);
+            ElementsGUI.DrawLine(Color.black);
             EditorGUILayout.Space();
 
 
             DisplayNameTemplateSettings();
-            FileRenamerStyleGUI.DrawUILine(Color.black);
+            ElementsGUI.DrawLine(Color.black);
 
             EditorGUILayout.Space();
             DisplayProcessSettings();
@@ -78,12 +86,12 @@ namespace FileRenamer
 
             TryPreviewResult();
 
-            FileRenamerStyleGUI.DrawUILine(Color.black);
+            ElementsGUI.DrawLine(Color.black);
 
             EditorGUILayout.Space();
             DisplayExportToggles();
 
-            FileRenamerStyleGUI.DrawUILine(Color.black);
+            ElementsGUI.DrawLine(Color.black);
             EditorGUILayout.Space();
 
             ExportFiles();
@@ -97,9 +105,9 @@ namespace FileRenamer
         private static void DisplayHeader()
         {
             EditorGUILayout.Space();
-            FileRenamerStyleGUI.DrawUILine(Color.black);
-            GUILayout.Label("File Renamer", EditorStyles.boldLabel);
-            FileRenamerStyleGUI.DrawUILine(Color.black);
+            ElementsGUI.DrawLine(Color.black);
+            GUILayout.Label(FileRenamerStyleGUI.HeaderText, EditorStyles.boldLabel);
+            ElementsGUI.DrawLine(Color.black);
             EditorGUILayout.Space();
         }
 
@@ -138,7 +146,7 @@ namespace FileRenamer
             }
 
             // Toggle to show/hide the file list
-            DisplayToggle("Show File List", ref _showInputFilesList, FileRenamerStyleGUI.ToggleLabelLayouts);
+            ElementsGUI.DisplayCustomToggle("Show File List", ref _showInputFilesList, FileRenamerStyleGUI.ToggleLabelLayouts);
             TryDisplayInputFilesList();
         }
 
@@ -150,7 +158,7 @@ namespace FileRenamer
             }
 
             EditorGUILayout.Space();
-            FileRenamerStyleGUI.DrawUILine(Color.black);
+            ElementsGUI.DrawLine(Color.black);
 
             // Begin a scroll view for long lists
             _inputViewScrollPos = EditorGUILayout.BeginScrollView(_inputViewScrollPos, GUILayout.Height(150));
@@ -184,26 +192,59 @@ namespace FileRenamer
         private void DisplayNameTemplateSettings()
         {
             GUILayout.Label("File Name Template [ Settings ]", EditorStyles.boldLabel);
+
+            DisplayFileNameMainSettingsFoldout();
+            DisplayFileNameAdjustmentsFoldout();
+        }
+        
+        private void DisplayFileNameMainSettingsFoldout()
+        {
             EditorGUILayout.Space();
 
-            string targetTemplate = EditorGUILayout.TextField(
-                "File Name Template",
-                _fileRenamer.Settings.FileNameTemplate,
-                GUILayout.Width(FileRenamerStyleGUI.LongTextFieldMaxWidth)
-                );
+            _showMainNameTemplateSettings = EditorGUILayout.Foldout(_showMainNameTemplateSettings, "Main Template", true);
 
-            _fileRenamer.Settings.SetFileNameTemplate(targetTemplate);
-
-            EditorGUILayout.Space();
-
-            if (GUILayout.Button("Select template from file", FileRenamerStyleGUI.ButtonsLayouts))
+            if (_showMainNameTemplateSettings)
             {
-                string requestedFileName = _fileRenamer.RequestFileName();
+                ElementsGUI.DisplayCustomToggle(
+                    "Preserve Existing File Name",
+                    () => _fileRenamer.Settings.PreserveExistingName,
+                    value => _fileRenamer.Settings.PreserveExistingName = value,
+                    FileRenamerStyleGUI.ToggleLabelLayouts);
 
-                if (requestedFileName != null)
+                GUI.enabled = !_fileRenamer.Settings.PreserveExistingName;
+
+                ElementsGUI.DisplayTextField(
+                    "File Name Template",
+                    _fileRenamer.Settings.FileNameTemplate,
+                    _fileRenamer.Settings.SetFileNameTemplate,
+                    GUILayout.Width(FileRenamerStyleGUI.LongTextFieldMaxWidth));
+
+                EditorGUILayout.Space();
+
+                if (GUILayout.Button("Select template from file", FileRenamerStyleGUI.ButtonsLayouts))
                 {
-                    _fileRenamer.Settings.SetFileNameTemplate(requestedFileName);
+                    string requestedFileName = _fileRenamer.RequestFileName();
+
+                    if (requestedFileName != null)
+                    {
+                        _fileRenamer.Settings.SetFileNameTemplate(requestedFileName);
+                    }
                 }
+
+                GUI.enabled = true;
+            }
+        }
+
+        private void DisplayFileNameAdjustmentsFoldout()
+        {
+            EditorGUILayout.Space();
+
+            _showExtraNameTemplateSettings = EditorGUILayout.Foldout(_showExtraNameTemplateSettings, "Adjustments", true);
+
+            if (_showExtraNameTemplateSettings)
+            {
+                ElementsGUI.DisplayTextFieldShort("Name Prefix", _fileRenamer.Settings.FileNamePrefix, _fileRenamer.Settings.SetFileNamePrefix);
+                ElementsGUI.DisplayTextFieldShort("Name Suffix", _fileRenamer.Settings.FileNameSuffix, _fileRenamer.Settings.SetFileNameSuffix);
             }
         }
 
@@ -214,7 +255,7 @@ namespace FileRenamer
                 return;
             }
 
-            DisplayToggle("Preview Result", ref _previewResultFilesList, FileRenamerStyleGUI.ToggleLabelLayouts);
+            ElementsGUI.DisplayCustomToggle("Preview Result", ref _previewResultFilesList, FileRenamerStyleGUI.ToggleLabelLayouts);
 
             if (!_previewResultFilesList)
             {
@@ -229,7 +270,7 @@ namespace FileRenamer
         {
             EditorGUILayout.Space();
             GUILayout.Label("Preview:", EditorStyles.boldLabel);
-            FileRenamerStyleGUI.DrawUILine(Color.black);
+            ElementsGUI.DrawLine(Color.black);
 
             // Scroll view for displaying old -> new file names
             _resultPreviewScrollPos = EditorGUILayout.BeginScrollView(_resultPreviewScrollPos, GUILayout.Height(150), GUILayout.ExpandHeight(true));
@@ -260,43 +301,47 @@ namespace FileRenamer
             GUILayout.Label("Export Settings [ Settings ]", EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
-            DisplayToggle("Can Overwrite Files",
+            ElementsGUI.DisplayToggle(
+                "Can Overwrite Files",
                 () => _fileRenamer.Settings.OverwriteFiles,
-                value => _fileRenamer.Settings.OverwriteFiles = value,
-                FileRenamerStyleGUI.ToggleLabelLayouts);
+                value => _fileRenamer.Settings.OverwriteFiles = value);
 
-            DisplayToggle("Create Subfolder",
+            ElementsGUI.DisplayToggle(
+                "Create Subfolder",
                 () => _fileRenamer.Settings.CreateSubFolder,
-                value => _fileRenamer.Settings.CreateSubFolder = value,
-                FileRenamerStyleGUI.ToggleLabelLayouts);
+                value => _fileRenamer.Settings.CreateSubFolder = value);
 
-            DisplayToggle("Open Export Folder",
+
+            ElementsGUI.DisplayToggle(
+                "Open Export Folder",
                 () => _fileRenamer.Settings.OpenExportFolder,
-                value => _fileRenamer.Settings.OpenExportFolder = value,
-                FileRenamerStyleGUI.ToggleLabelLayouts);
+                value => _fileRenamer.Settings.OpenExportFolder = value);
         }
 
         private void DisplayProcessSettings()
         {
             GUILayout.Label("Process Settings [ Settings ]", EditorStyles.boldLabel);
 
-            DisplayToggle("Sort Ascending",
+            ElementsGUI.DisplayToggle(
+                "Sort Ascending",
                 () => _fileRenamer.Settings.SortAscending,
-                value => _fileRenamer.Settings.SortAscending = value,
-                FileRenamerStyleGUI.ToggleLabelLayouts);
+                value => _fileRenamer.Settings.SortAscending = value);
 
-            DisplayToggle("Add Numbering",
+            ElementsGUI.DisplayToggle(
+                "Preserve Existing Numbering",
+                () => _fileRenamer.Settings.PreserveExistingNumbering,
+                value => _fileRenamer.Settings.PreserveExistingNumbering = value);
+
+
+            ElementsGUI.DisplayToggle("Add Numbering",
                 () => _fileRenamer.Settings.AddNumbering,
-                value => _fileRenamer.Settings.AddNumbering = value,
-                FileRenamerStyleGUI.ToggleLabelLayouts);
+                value => _fileRenamer.Settings.AddNumbering = value);
 
             TryInputCustomNumbering();
 
-            DisplayToggle("Preserve Existing Numbering",
-                () => _fileRenamer.Settings.PreserveExistingNumbering,
-                value => _fileRenamer.Settings.PreserveExistingNumbering = value,
-                FileRenamerStyleGUI.ToggleLabelLayouts);
+            EditorGUILayout.Space();
         }
+
 
         private void TryInputCustomNumbering()
         {
@@ -305,45 +350,18 @@ namespace FileRenamer
                 return;
             }
 
-            _customNumbering = EditorGUILayout.TextField(
-                "Custom Index",
-                _customNumbering,
-                GUILayout.MaxWidth(FileRenamerStyleGUI.ShortTextFieldMaxWidth)
-                );
-
             // ToDo : Implement this for checking numbers inside TextField!
-
             //_customNumbering = System.Text.RegularExpressions.Regex.Replace(_customNumbering, "[^0-9]", "");
 
-            if (int.TryParse(_customNumbering, out int customIndex))
+            ElementsGUI.DisplayTextFieldShort("Custom Index", _customNumbering, (customNumbering) =>
             {
-                _fileRenamer.Settings.NumberingStartIndex = customIndex;
-            }
+                if (int.TryParse(customNumbering, out int customIndex))
+                {
+                    _fileRenamer.Settings.NumberingStartIndex = customIndex;
+                }
+            });
+
             EditorGUILayout.Space();
-        }
-
-        private void DisplayToggle(string label, ref bool relatedParameter, params GUILayoutOption[] labelOptions)
-        {
-            EditorGUILayout.BeginHorizontal();
-
-            GUILayout.Label(label, labelOptions);
-            relatedParameter = EditorGUILayout.Toggle(relatedParameter);
-
-            GUILayout.Space(5);
-            EditorGUILayout.EndHorizontal();
-        }
-
-
-        private void DisplayToggle(string label, Func<bool> getter, Action<bool> setter, params GUILayoutOption[] labelOptions)
-        {
-            EditorGUILayout.BeginHorizontal();
-
-            GUILayout.Label(label, labelOptions);
-            bool newValue = EditorGUILayout.Toggle(getter());
-            setter(newValue);
-
-            GUILayout.Space(5);
-            EditorGUILayout.EndHorizontal();
         }
 
         private void ExportFiles()
@@ -355,7 +373,6 @@ namespace FileRenamer
                 UpdateMessages(_fileRenamer);
             }
         }
-
         private void UpdateMessages(FileRenamerLogic fileRenamer)
         {
             _resultMsg = fileRenamer.LastResultMsg;

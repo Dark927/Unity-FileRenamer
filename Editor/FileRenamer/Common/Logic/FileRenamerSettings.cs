@@ -20,9 +20,12 @@ namespace FileRenamer
         public event Action OnNamingSettingsUpdated;
 
         private string _fileNameTemplate = "ImageName_Template";    // Template for file names
+        private string _fileNamePrefix;                             // Prefix for file names
+        private string _fileNameSuffix;                             // Suffix for file names
         private int _numberingStartIndex = 0;
         private bool _sortAscending = true;                         // Sort files in ascending order
         private bool _addNumbering = true;                          // Add numbering to file names
+        private bool _preserveExistingName = false;                 // Preserve existing names for files
         private bool _preserveExistingNumbering = false;            // Preserve existing numbering in file names
 
         #endregion
@@ -35,6 +38,8 @@ namespace FileRenamer
         public bool OpenExportFolder { get; set; }                  // Open the export folder.
 
         public string FileNameTemplate => _fileNameTemplate;
+        public string FileNamePrefix => _fileNamePrefix;
+        public string FileNameSuffix => _fileNameSuffix;
 
         public int NumberingStartIndex
         {
@@ -75,6 +80,19 @@ namespace FileRenamer
             }
         }
 
+        public bool PreserveExistingName
+        {
+            get => _preserveExistingName;
+            set
+            {
+                if (_preserveExistingName != value)
+                {
+                    _preserveExistingName = value;
+                    OnNamingSettingsUpdated?.Invoke();
+                }
+            }
+        }
+
         public bool PreserveExistingNumbering
         {
             get => _preserveExistingNumbering;
@@ -95,19 +113,33 @@ namespace FileRenamer
 
         public void SetFileNameTemplate(string targetTemplate)
         {
-            if (_fileNameTemplate != targetTemplate)
-            {
-                //// Validate the file name template for illegal characters
-                //if (ContainsInvalidFileNameChars(value))
-                //{
-                //    throw new ArgumentException("File name template contains illegal characters.");
-                //}
+            SetFileNamingPart(ref _fileNameTemplate, targetTemplate);
+        }
 
-                _fileNameTemplate = targetTemplate;
+        public void SetFileNamePrefix(string targetPrefix)
+        {
+            SetFileNamingPart(ref _fileNamePrefix, targetPrefix);
+        }
+
+        public void SetFileNameSuffix(string targetSuffix)
+        {
+            SetFileNamingPart(ref _fileNameSuffix, targetSuffix);
+        }
+
+        private void SetFileNamingPart(ref string namingPart, string targetValue)
+        {
+            if (namingPart != targetValue)
+            {
+                if (ContainsInvalidFileNameChars(targetValue))
+                {
+                    throw new ArgumentException("File name part contains illegal characters.");
+                }
+
+                namingPart = targetValue;
                 OnNamingSettingsUpdated?.Invoke();
             }
         }
-        
+
         private bool ContainsInvalidFileNameChars(string fileName)
         {
             char[] invalidChars = Path.GetInvalidFileNameChars();

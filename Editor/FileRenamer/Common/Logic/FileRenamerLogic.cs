@@ -5,6 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System;
 using SFB;
+using System.Text;
 
 namespace FileRenamer
 {
@@ -22,6 +23,8 @@ namespace FileRenamer
         private FileRenamerSettings _settings;
 
         private bool _processed = false;
+
+        // ToDo : remove this and use events instead
         private string _resultMsg = "";
         private string _errorMsg = "";
 
@@ -119,8 +122,8 @@ namespace FileRenamer
             }
 
             _processedFiles.Clear();
-            List<string> files = _inputFilePaths?.Where(file => File.Exists(file)).ToList();
 
+            List<string> files = GetValidFiles();
             if (files == null || files.Count == 0)
             {
                 _errorMsg = "# Not processed : Files do not exist!";
@@ -129,46 +132,80 @@ namespace FileRenamer
 
             FileRenamerUtilities.SortFiles(files, Settings.SortAscending);
 
-            int fileNumberingIndex = _settings.NumberingStartIndex;
-
-            // Rename and export files
-
-            for (int currentFileIndex = 0; currentFileIndex < files.Count; currentFileIndex++)
-            {
-                string originalFilePath = files[currentFileIndex];
-                string newFileName = Settings.FileNameTemplate;
-                bool hasOwnNumbering = false;
-
-                // Extract existing numbering if the option is enabled
-
-                if (Settings.PreserveExistingNumbering)
-                {
-                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalFilePath);
-                    string existingNumbering = FileRenamerUtilities.ExtractNumbering(fileNameWithoutExtension);
-
-                    if (!string.IsNullOrEmpty(existingNumbering))
-                    {
-                        newFileName += $"_{existingNumbering}";
-                        hasOwnNumbering = true;
-                    }
-                }
-
-                // Add numbering if the option is enabled
-
-                if (Settings.AddNumbering && !hasOwnNumbering)
-                {
-                    newFileName += $"_{fileNumberingIndex:00}";
-                    ++fileNumberingIndex;
-                }
-
-                string extension = Path.GetExtension(originalFilePath);
-                newFileName += extension;
-
-                _processedFiles.Add(originalFilePath, newFileName);
-            }
+            ProcessFiles(files);
 
             _resultMsg = $"Processed {files.Count} files (ready for export)";
             _processed = true;
+        }
+
+        private List<string> GetValidFiles()
+        {
+            return _inputFilePaths?.Where(file => File.Exists(file)).ToList();
+        }
+
+        private void ProcessFiles(List<string> files)
+        {
+            int fileNumberingIndex = _settings.NumberingStartIndex;
+
+            foreach (var originalFilePath in files)
+            {
+                string newFileName = GenerateNewFileName(originalFilePath, ref fileNumberingIndex);
+                _processedFiles.Add(originalFilePath, newFileName);
+            }
+        }
+
+        private string GenerateNewFileName(string originalFilePath, ref int fileNumberingIndex)
+        {
+            StringBuilder newFileNameBuilder;
+
+            newFileNameBuilder = Settings.PreserveExistingName
+                ? new StringBuilder(Path.GetFileNameWithoutExtension(originalFilePath))
+                : new StringBuilder(Settings.FileNameTemplate);
+
+            bool hasOwnNumbering = false;
+
+            // Add prefix
+            if (!string.IsNullOrEmpty(Settings.FileNamePrefix))
+            {
+                newFileNameBuilder.Insert(0, Settings.FileNamePrefix);
+            }
+
+            // Add suffix
+            if (!string.IsNullOrEmpty(Settings.FileNameSuffix))
+            {
+                newFileNameBuilder.Append(Settings.FileNameSuffix);
+            }
+
+            // Extract existing numbering if the option is enabled
+            if (Settings.PreserveExistingNumbering)
+            {
+                string existingNumbering = ExtractExistingNumbering(originalFilePath);
+                if (!string.IsNullOrEmpty(existingNumbering))
+                {
+                    newFileNameBuilder.Append($"_{existingNumbering}");
+                    hasOwnNumbering = true;
+                }
+            }
+
+            // Add numbering if the option is enabled and no existing numbering is found
+            if (Settings.AddNumbering && !hasOwnNumbering)
+            {
+                newFileNameBuilder.Append($"_{fileNumberingIndex:00}");
+                fileNumberingIndex++;
+            }
+
+            // Add the file extension
+            string extension = Path.GetExtension(originalFilePath);
+            newFileNameBuilder.Append(extension);
+
+            return newFileNameBuilder.ToString();
+        }
+
+
+        private string ExtractExistingNumbering(string originalFilePath)
+        {
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalFilePath);
+            return FileRenamerUtilities.ExtractNumbering(fileNameWithoutExtension);
         }
 
         public string GetOverwrittenFilesInfo()
